@@ -26,53 +26,47 @@ QTPATH = $$dirname(TEMPNAME)
 
 #OBJECTS_DIR=.obj
 #MOC_DIR=.moc
+
 QSSH_HEADERS = $$QSSH_PUBLIC_HEADERS $$BOTAN_PUBLIC_HEADERS
 DEFINES+=QSSH_LIBRARY
 DEFINES+=BOTAN_LIBRARY
+msvc*: DEFINES += _CRT_SECURE_NO_WARNINGS
 
-#message($$[QT_HOST_LIBS])
+
 unix{
     CONFIG += lib_bundle
-    #headers.path=$$QTPATH/../include/QSsh
-    #headers.files=$$KARCHIVE_PUBLIC_HEADERS
     QMAKE_PKGCONFIG_DESTDIR = pkgconfig
-    INSTALLS += target
-
     FRAMEWORK_HEADERS.version = Versions
     FRAMEWORK_HEADERS.files = $$QSSH_HEADERS
     FRAMEWORK_HEADERS.path = Headers
     QMAKE_BUNDLE_DATA += FRAMEWORK_HEADERS
-
     target.path=$$QTPATH/../lib/$${LIB_ARCH}
+    INSTALLS = target
 }
-
-
-win32 {
-    headers.path=$$[QT_INSTALL_HEADERS]/QSsh
-    headers.files=$$QSSH_PUBLIC_HEADERS
-    CONFIG(staticlib){
-        target.path=$$PREFIX/lib
-        QMAKE_PKGCONFIG_LIBDIR = $$PREFIX/lib/
-    } else {
-        target.path=$$PREFIX/bin
-        QMAKE_PKGCONFIG_LIBDIR = $$PREFIX/bin/
-    }
-    INSTALLS += headers target
-    ## odd, this path seems to be relative to the
-    ## target.path, so if we install the .dll into
-    ## the 'bin' dir, the .pc will go there as well,
-    ## unless have hack the needed path...
-    ## TODO any nicer solution?
-    #QMAKE_PKGCONFIG_DESTDIR = ../lib/pkgconfig
-    # workaround for qdatetime.h macro bug
-}
-
 
 android{
+    CONFIG -= android_install
     headers.path=$$[QT_INSTALL_HEADERS]/QSsh
     headers.files=$$QSSH_HEADERS
-    #target.path=$$[QT_HOST_LIBS]
-    INSTALLS += headers
+    target.path=$$[QT_HOST_LIBS]
+    INSTALLS = headers target
 }
 
-msvc*: DEFINES += _CRT_SECURE_NO_WARNINGS
+win32:*g++* {
+    headers.path=$$[QT_INSTALL_HEADERS]/QSsh
+    headers.files=$$QSSH_HEADERS
+
+    copy_dll.files = $$[QT_HOST_LIBS]/QSsh.dll
+    copy_dll.path = $$QTPATH
+
+    target.path=$$[QT_HOST_LIBS]
+
+    INSTALLS = headers target copy_dll
+}
+
+linux:!android{
+    headers.path=$$[QT_INSTALL_HEADERS]/QSsh
+    headers.files=$$QSSH_HEADERS
+    target.path=$$[QT_HOST_LIBS]
+    INSTALLS = headers target
+}
